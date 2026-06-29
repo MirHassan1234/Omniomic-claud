@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniOmics Cloud — Genomic Data Analysis Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --ink:#0B1F23;
+  --surface:#102B30;
+  --surface-2:#16383F;
+  --line:#27474E;
+  --cyan:#4FD8C4;
+  --amber:#E8A33D;
+  --coral:#E8714D;
+  --text:#EAF4F1;
+  --muted:#85ACA6;
+  --font-display:'Fraunces', Georgia, serif;
+  --font-mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  --font-body:'Inter', -apple-system, sans-serif;
+}
+@font-face{font-family:'Fraunces';src:local('Georgia');}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--ink);color:var(--text);font-family:var(--font-body);}
+a{color:var(--cyan);}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+
+/* ---------- header ---------- */
+header.top{
+  border-bottom:1px solid var(--line);
+  padding:22px 0;
+  position:sticky;top:0;z-index:50;
+  background:rgba(11,31,35,0.92);
+  backdrop-filter:blur(6px);
+}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand svg{width:34px;height:34px;flex:none;}
+.brand .name{font-family:var(--font-display);font-size:21px;letter-spacing:0.2px;}
+.brand .name b{color:var(--cyan);font-weight:600;}
+.brand .tag{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-left:4px;padding:3px 8px;border:1px solid var(--line);border-radius:99px;}
+nav.modules{display:flex;gap:18px;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);}
+nav.modules span.active{color:var(--cyan);}
+nav.modules span.disabled{opacity:0.4;}
+nav.modules .modlink{cursor:pointer;transition:color .15s;}
+nav.modules .modlink:hover{color:var(--text);}
+.app-view.hidden{display:none !important;}
+textarea:focus{outline:none;border-color:var(--cyan) !important;}
+
+/* ---------- hero ---------- */
+.hero{padding:56px 0 28px;border-bottom:1px solid var(--line);}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--amber);margin-bottom:14px;}
+h1.hero-title{font-family:var(--font-display);font-size:40px;line-height:1.12;font-weight:600;margin:0 0 14px;max-width:720px;}
+.hero p.sub{color:var(--muted);max-width:620px;font-size:15.5px;line-height:1.6;margin:0 0 26px;}
+.disclosure{
+  display:flex;gap:10px;align-items:flex-start;
+  border:1px solid var(--line);background:var(--surface);
+  border-radius:10px;padding:14px 16px;max-width:760px;font-size:13px;color:var(--muted);line-height:1.55;
+}
+.disclosure svg{flex:none;margin-top:2px;width:16px;height:16px;color:var(--amber);}
+
+/* ---------- pipeline stepper ---------- */
+.pipeline{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow-x:auto;}
+.step{
+  flex:1;min-width:148px;padding:16px 18px;border-right:1px solid var(--line);cursor:pointer;
+  font-family:var(--font-mono);transition:background .15s ease;position:relative;
+}
+.step:last-child{border-right:none;}
+.step:hover{background:var(--surface);}
+.step .num{font-size:11px;color:var(--muted);}
+.step .label{font-size:13.5px;margin-top:4px;color:var(--text);}
+.step.active{background:var(--surface-2);}
+.step.active .num{color:var(--cyan);}
+.step.done::after{content:"✓";position:absolute;top:14px;right:14px;color:var(--cyan);font-size:12px;}
+.step.locked{opacity:0.38;cursor:not-allowed;}
+
+/* ---------- panels ---------- */
+.panel{padding:40px 0;border-bottom:1px solid var(--line);}
+.panel h2{font-family:var(--font-display);font-size:25px;margin:0 0 6px;font-weight:600;}
+.panel .desc{color:var(--muted);font-size:14px;margin:0 0 26px;max-width:680px;line-height:1.6;}
+
+/* upload zone */
+.dropzone{
+  border:1.5px dashed var(--line);border-radius:14px;padding:40px 24px;text-align:center;
+  background:var(--surface);transition:border-color .15s, background .15s;
+}
+.dropzone.drag{border-color:var(--cyan);background:var(--surface-2);}
+.dropzone svg{width:30px;height:30px;color:var(--muted);margin-bottom:12px;}
+.dropzone .ddtext{color:var(--text);font-size:14.5px;}
+.dropzone .ddsub{color:var(--muted);font-size:12.5px;margin-top:6px;}
+input[type=file]{display:none;}
+.btnrow{display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
+button{
+  font-family:var(--font-mono);font-size:12.5px;letter-spacing:0.02em;
+  border:1px solid var(--line);background:var(--surface);color:var(--text);
+  padding:10px 18px;border-radius:8px;cursor:pointer;transition:all .15s ease;
+}
+button:hover{border-color:var(--cyan);color:var(--cyan);}
+button.primary{background:var(--cyan);color:var(--ink);border-color:var(--cyan);font-weight:600;}
+button.primary:hover{background:#6fe6d4;color:var(--ink);}
+button:disabled{opacity:0.35;cursor:not-allowed;}
+
+.filelist{margin-top:18px;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);}
+.filelist .f{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);}
+.filelist .f b{color:var(--text);}
+
+/* stat grid */
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:28px;}
+.stat{background:var(--surface);padding:20px;}
+.stat .v{font-family:var(--font-display);font-size:26px;color:var(--cyan);}
+.stat .l{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
+@media(max-width:760px){.statgrid{grid-template-columns:repeat(2,1fr);}}
+
+.chartcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:22px;}
+.chartcard h3{font-family:var(--font-mono);font-size:12.5px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin:0 0 16px;font-weight:500;}
+.chartcard canvas{max-height:280px;}
+.twocol{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;}
+@media(max-width:880px){.twocol{grid-template-columns:1fr;}}
+
+table.tax{width:100%;border-collapse:collapse;font-size:13px;}
+table.tax th{text-align:left;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);}
+table.tax td{padding:9px 10px;border-bottom:1px solid var(--line);}
+.swatch{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:8px;}
+
+.note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:6px;}
+.note.warn{color:var(--amber);}
+
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin-bottom:24px;}
+.flow span{padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);}
+.flow .arrow{color:var(--line);padding:0 6px;}
+
+footer{padding:30px 0;text-align:center;color:var(--muted);font-family:var(--font-mono);font-size:11.5px;}
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="19" stroke="#4FD8C4" stroke-width="1.4"/>
+        <path d="M20 6 L20 20 L30 27" stroke="#4FD8C4" stroke-width="1.4" fill="none"/>
+        <path d="M20 20 L11 27" stroke="#E8A33D" stroke-width="1.4" fill="none"/>
+        <circle cx="20" cy="20" r="2.4" fill="#4FD8C4"/>
+        <circle cx="30" cy="27" r="2" fill="#4FD8C4"/>
+        <circle cx="11" cy="27" r="2" fill="#E8A33D"/>
+      </svg>
+      <div class="name"><b>OmniOmics</b> Cloud</div>
+      <div class="tag">Prototype</div>
+    </div>
+    <nav class="modules">
+      <span class="modlink active" data-app="metagenomics">Metagenomics</span>
+      <span class="modlink" data-app="sanger">Sanger</span>
+      <span class="modlink" data-app="genome">Genome Analysis</span>
+      <span class="disabled">Phylogeny</span>
+    </nav>
+  </div>
+</header>
+
+<div id="app-metagenomics" class="app-view">
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Module 01 — Metagenomic Analysis</div>
+    <h1 class="hero-title">FASTQ in. Taxonomy, diversity, and a report out.</h1>
+    <p class="sub">This is a real, working slice of OmniOmics Cloud: it parses actual FASTQ records in your browser, computes genuine quality and composition statistics, and renders the same kind of report a researcher would pull from the full platform.</p>
+    <div class="disclosure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <div><b style="color:var(--text)">What's real vs. simulated here:</b> Upload parsing, quality scoring, trimming, GC content, and diversity math run on the actual sequence data you give it. Taxonomic classification uses a small illustrative reference set (not SILVA/NCBI) — in production this stage hands off to Kraken2, QIIME 2, or DADA2 against a real reference database, per the platform roadmap. Use "Load demo dataset" for a synthetic 3-sample microbiome to see the full pipeline end to end.</div>
+    </div>
+  </div>
+</section>
+
+<nav class="pipeline wrap" id="pipeline">
+  <div class="step active" data-step="upload"><div class="num">01</div><div class="label">Upload</div></div>
+  <div class="step locked" data-step="qc"><div class="num">02</div><div class="label">Quality Control</div></div>
+  <div class="step locked" data-step="taxonomy"><div class="num">03</div><div class="label">Taxonomic Classification</div></div>
+  <div class="step locked" data-step="diversity"><div class="num">04</div><div class="label">Diversity Analysis</div></div>
+  <div class="step locked" data-step="report"><div class="num">05</div><div class="label">Report</div></div>
+</nav>
+
+<!-- STEP 1: UPLOAD -->
+<section class="panel" id="panel-upload">
+  <div class="wrap">
+    <h2>Upload FASTQ files</h2>
+    <p class="desc">Drop one or more samples (.fastq / .fq / .txt). Each file is treated as one sample. No file leaves your browser — all parsing happens client-side.</p>
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+      <div class="ddtext">Drag FASTQ files here, or choose from your computer</div>
+      <div class="ddsub">Accepted: .fastq, .fq, .txt — Sanger/Illumina 1.8+ quality encoding</div>
+      <div class="btnrow">
+        <button id="chooseBtn">Choose files</button>
+        <button id="demoBtn" class="primary">Load demo dataset (3 samples)</button>
+      </div>
+      <input type="file" id="fileInput" multiple accept=".fastq,.fq,.txt">
+    </div>
+    <div class="filelist" id="filelist"></div>
+    <div class="btnrow" style="justify-content:flex-start;margin-top:24px;">
+      <button class="primary" id="runQcBtn" disabled>Run quality control →</button>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 2: QC -->
+<section class="panel hidden" id="panel-qc">
+  <div class="wrap">
+    <h2>Quality control</h2>
+    <p class="desc">Per-read length, GC content, and per-position Phred quality, decoded directly from the FASTQ quality strings (Sanger/Illumina 1.8+, ASCII offset 33).</p>
+    <div class="statgrid" id="qcStats"></div>
+    <div class="twocol">
+      <div class="chartcard"><h3>Per-base sequence quality</h3><canvas id="qualChart"></canvas><div class="note">Green = Q≥28, amber = Q20–28, coral = Q&lt;20 — the same banding FastQC uses.</div></div>
+      <div class="chartcard"><h3>Read length distribution</h3><canvas id="lenChart"></canvas></div>
+    </div>
+    <div class="chartcard"><h3>GC content distribution</h3><canvas id="gcChart"></canvas></div>
+    <div class="btnrow" style="justify-content:flex-start;">
+      <button id="trimBtn" class="primary">Trim low-quality ends &amp; continue →</button>
+    </div>
+    <div class="note" id="trimNote"></div>
+  </div>
+</section>
+
+<!-- STEP 3: TAXONOMY -->
+<section class="panel hidden" id="panel-taxonomy">
+  <div class="wrap">
+    <h2>Taxonomic classification</h2>
+    <p class="desc">Each trimmed read is scanned for marker motifs from a small illustrative reference set and assigned to the best-matching genus, mirroring how k-mer classifiers like Kraken2 work — at a scale that runs instantly in a browser.</p>
+    <div class="flow">
+      <span>Trimmed reads</span><span class="arrow">→</span><span>k-mer scan</span><span class="arrow">→</span><span>best-match genus</span><span class="arrow">→</span><span>per-sample composition</span>
+    </div>
+    <div class="twocol">
+      <div class="chartcard"><h3>Relative abundance by sample</h3><canvas id="taxChart"></canvas></div>
+      <div class="chartcard">
+        <h3>Classification summary</h3>
+        <table class="tax" id="taxTable"></table>
+      </div>
+    </div>
+    <div class="btnrow" style="justify-content:flex-start;">
+      <button id="diversityBtn" class="primary">Run diversity analysis →</button>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 4: DIVERSITY -->
+<section class="panel hidden" id="panel-diversity">
+  <div class="wrap">
+    <h2>Diversity analysis</h2>
+    <p class="desc">Alpha diversity computed per sample from the classification counts above — observed richness, Shannon index, and Simpson index.</p>
+    <div class="twocol">
+      <div class="chartcard"><h3>Shannon diversity index by sample</h3><canvas id="shannonChart"></canvas></div>
+      <div class="chartcard">
+        <h3>Alpha diversity table</h3>
+        <table class="tax" id="divTable"></table>
+        <div class="note">Shannon: higher = more even, more diverse community. Simpson: closer to 1 = more diverse. Richness: distinct genera observed.</div>
+      </div>
+    </div>
+    <div class="btnrow" style="justify-content:flex-start;">
+      <button id="reportBtn" class="primary">Generate report →</button>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 5: REPORT -->
+<section class="panel hidden" id="panel-report">
+  <div class="wrap">
+    <h2>Report</h2>
+    <p class="desc">A one-click summary of everything above — the same artifact OmniOmics Cloud would hand back at the end of a metagenomics run.</p>
+    <div class="btnrow" style="justify-content:flex-start;">
+      <button class="primary" id="pdfBtn">Download PDF report</button>
+    </div>
+    <div class="note" id="reportNote" style="margin-top:14px;"></div>
+  </div>
+</section>
+
+</div><!-- /app-metagenomics -->
+
+<!-- ============================================================
+     SANGER SEQUENCE ANALYSIS MODULE
+============================================================ -->
+<div id="app-sanger" class="app-view hidden">
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Module 02 — Sanger Sequence Analysis</div>
+      <h1 class="hero-title">A single read, trimmed, and checked against a reference.</h1>
+      <p class="sub">Paste or upload a Sanger read (FASTA, or FASTQ with quality). The module trims low-quality ends, computes real sequence stats, and aligns it against a small reference panel to flag mismatches — the same shape as an AB1 → trim → BLAST → mutation-call workflow.</p>
+      <div class="disclosure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div><b style="color:var(--text)">What's real vs. simulated here:</b> Trimming, GC%, length, and the mismatch alignment against the chosen reference are computed for real on whatever sequence you provide. The reference panel is a small illustrative set, not a live BLAST/GenBank search — production would call NCBI BLAST or a local BLAST+ database, per the roadmap.</div>
+      </div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="wrap">
+      <h2>1 · Input read</h2>
+      <p class="desc">Paste a single sequence below (FASTA header optional), or load a demo read.</p>
+      <textarea id="sangerInput" placeholder="ATGCGTACCTGAACGTTAGGCTAC..." style="width:100%;min-height:110px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:var(--font-mono);font-size:13px;padding:14px;"></textarea>
+      <div class="btnrow" style="justify-content:flex-start;">
+        <select id="sangerRef" style="font-family:var(--font-mono);font-size:12.5px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 14px;">
+          <option value="">Compare against reference…</option>
+        </select>
+        <button id="sangerDemoBtn">Load demo read</button>
+        <button id="sangerRunBtn" class="primary">Analyze read →</button>
+      </div>
+    </div>
+  </section>
+  <section class="panel hidden" id="sangerResults">
+    <div class="wrap">
+      <h2>2 · Results</h2>
+      <div class="statgrid" id="sangerStats"></div>
+      <div class="twocol">
+        <div class="chartcard"><h3>Per-base quality (trace proxy)</h3><canvas id="sangerQualChart"></canvas></div>
+        <div class="chartcard"><h3>Base composition</h3><canvas id="sangerCompChart"></canvas></div>
+      </div>
+      <div class="chartcard">
+        <h3>Alignment vs. reference — mismatches highlighted</h3>
+        <div id="sangerAlign" style="font-family:var(--font-mono);font-size:13px;line-height:1.9;word-break:break-all;white-space:pre-wrap;"></div>
+        <div class="note" id="sangerAlignNote"></div>
+      </div>
+    </div>
+  </section>
+</div><!-- /app-sanger -->
+
+<!-- ============================================================
+     UNIVERSAL GENOME ANALYSIS MODULE (plant / animal / virus / fungus / bacteria)
+============================================================ -->
+<div id="app-genome" class="app-view hidden">
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Module 03 — Genome Analysis</div>
+      <h1 class="hero-title">One FASTA in, the same core stats out — whatever the kingdom.</h1>
+      <p class="sub">Plant, animal, virus, fungus, or bacterial genome/assembly: the sequence-statistics layer is the same regardless of organism. Upload a FASTA, tag its kingdom for organization, and get real length, GC, N50, ORF, and codon-usage analysis.</p>
+      <div class="disclosure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div><b style="color:var(--text)">What's real vs. simulated here:</b> Every number on this page — length, GC%, N50, ORF count, codon usage — is computed directly from the FASTA you load, real or demo. What's <i>not</i> here yet: gene annotation, repeat masking, and comparative genomics against RefSeq/Ensembl — those need reference databases and tools like Prokka, AUGUSTUS, or BUSCO running on a real backend, per the platform roadmap.</div>
+      </div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="wrap">
+      <h2>1 · Upload genome / assembly (FASTA)</h2>
+      <p class="desc">Multi-FASTA is fine — each "&gt;" record is treated as a contig or chromosome.</p>
+      <div class="dropzone" id="genomeDropzone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+        <div class="ddtext">Drag a FASTA file here, or choose from your computer</div>
+        <div class="ddsub">Accepted: .fasta, .fa, .fna, .txt</div>
+        <div class="btnrow">
+          <select id="kingdomSelect" style="font-family:var(--font-mono);font-size:12.5px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 14px;">
+            <option>Plant</option><option>Animal</option><option>Virus</option><option>Fungus</option><option>Bacteria</option>
+          </select>
+          <button id="genomeChooseBtn">Choose file</button>
+          <button id="genomeDemoBtn" class="primary">Load demo genome for this kingdom</button>
+        </div>
+        <input type="file" id="genomeFileInput" accept=".fasta,.fa,.fna,.txt">
+      </div>
+      <div class="filelist" id="genomeFilelist"></div>
+    </div>
+  </section>
+  <section class="panel hidden" id="genomeResults">
+    <div class="wrap">
+      <h2>2 · Genome statistics — <span id="genomeKingdomLabel"></span></h2>
+      <div class="statgrid" id="genomeStats"></div>
+      <div class="twocol">
+        <div class="chartcard"><h3>Contig length distribution</h3><canvas id="genomeLenChart"></canvas></div>
+        <div class="chartcard"><h3>GC content by contig</h3><canvas id="genomeGcChart"></canvas></div>
+      </div>
+      <div class="twocol">
+        <div class="chartcard"><h3>ORFs found (≥100 bp, longest 12)</h3><canvas id="genomeOrfChart"></canvas></div>
+        <div class="chartcard">
+          <h3>Codon usage (frame 1, top 12)</h3>
+          <table class="tax" id="codonTable"></table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div><!-- /app-genome -->
+
+<footer>OmniOmics Cloud — Metagenomics, Sanger &amp; Genome Analysis prototype · runs entirely client-side</footer>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+const STATE = { samples: [] }; // [{name, raw, records, trimmed, taxCounts, diversity}]
+const GENUS_COLORS = {
+  "Bacteroides":"#4FD8C4","Faecalibacterium":"#7FD6E8","Escherichia":"#E8714D",
+  "Lactobacillus":"#E8A33D","Bifidobacterium":"#C9E84F","Unclassified":"#3F5C61"
+};
+const GENERA = Object.keys(GENUS_COLORS);
+
+/* k-mer "reference signatures" — illustrative only, not a real database */
+const SIGNATURES = {
+  "Bacteroides":["GGTCAACA","CATTCGGA","TGAACCGT"],
+  "Faecalibacterium":["ACGTTGCA","CTGGAACA","TTGCAACG"],
+  "Escherichia":["AAGCTTGG","GCATTCCA","TGGCATTC"],
+  "Lactobacillus":["TTACGGCA","GCAACTGG","CCGGTTAA"],
+  "Bifidobacterium":["GGCATTGA","ACCGTTGC","TTGGCCAA"]
+};
+
+/* ============================================================
+   FASTQ PARSING (real)
+============================================================ */
+function parseFastq(text){
+  const lines = text.split(/\r?\n/).filter(l => l.length || l==="");
+  const records = [];
+  for(let i=0;i+3<lines.length;i+=4){
+    const h = lines[i];
+    if(!h.startsWith("@")) continue;
+    const seq = lines[i+1] || "";
+    const plus = lines[i+2] || "";
+    const qual = lines[i+3] || "";
+    if(!plus.startsWith("+")) continue;
+    if(seq.length===0 || qual.length!==seq.length) continue;
+    records.push({ id:h.slice(1), seq:seq.toUpperCase(), qual });
+  }
+  return records;
+}
+
+function qualScores(qualStr){
+  // Sanger / Illumina 1.8+ : ASCII offset 33
+  const out = new Array(qualStr.length);
+  for(let i=0;i<qualStr.length;i++) out[i] = qualStr.charCodeAt(i) - 33;
+  return out;
+}
+
+function gcContent(seq){
+  let gc=0;
+  for(const c of seq) if(c==="G"||c==="C") gc++;
+  return seq.length ? (gc/seq.length*100) : 0;
+}
+
+/* ============================================================
+   DEMO DATA GENERATOR — synthetic but structurally realistic
+   Plants reference motifs at controlled frequencies to create
+   three distinct, recognizable microbiome profiles.
+============================================================ */
+function randSeq(len){
+  const bases="ACGT"; let s="";
+  for(let i=0;i<len;i++) s+=bases[Math.floor(Math.random()*4)];
+  return s;
+}
+function randQualString(len, baseQ){
+  // quality decays slightly toward the 3' end, like real Illumina runs
+  let s="";
+  for(let i=0;i<len;i++){
+    let q = baseQ - Math.floor((i/len)*10) + Math.round((Math.random()-0.5)*6);
+    q = Math.max(2, Math.min(40, q));
+    s += String.fromCharCode(q+33);
+  }
+  return s;
+}
+function makeRead(genus, readLen){
+  let seq = randSeq(readLen);
+  if(genus !== "Unclassified"){
+    const motifs = SIGNATURES[genus];
+    const motif = motifs[Math.floor(Math.random()*motifs.length)];
+    const pos = Math.floor(Math.random()*(readLen-motif.length));
+    seq = seq.slice(0,pos) + motif + seq.slice(pos+motif.length);
+  }
+  return seq;
+}
+function generateDemoFastq(sampleName, profile, n, readLen, baseQ){
+  let out = "";
+  for(let i=0;i<n;i++){
+    const r = Math.random();
+    let cum=0, genus="Unclassified";
+    for(const g of Object.keys(profile)){ cum+=profile[g]; if(r<=cum){genus=g; break;} }
+    const seq = makeRead(genus, readLen);
+    const qual = randQualString(readLen, baseQ);
+    out += `@${sampleName}.read${i+1} synthetic-demo\n${seq}\n+\n${qual}\n`;
+  }
+  return out;
+}
+function loadDemoDataset(){
+  const profiles = {
+    "Sample_A_balanced": {"Bacteroides":0.30,"Faecalibacterium":0.25,"Lactobacillus":0.15,"Bifidobacterium":0.15,"Escherichia":0.05},
+    "Sample_B_dysbiotic": {"Escherichia":0.55,"Bacteroides":0.15,"Faecalibacterium":0.05,"Lactobacillus":0.05,"Bifidobacterium":0.05},
+    "Sample_C_lactobacillus_rich": {"Lactobacillus":0.45,"Bifidobacterium":0.20,"Bacteroides":0.15,"Faecalibacterium":0.10,"Escherichia":0.02}
+  };
+  const files = [];
+  for(const name of Object.keys(profiles)){
+    const fastq = generateDemoFastq(name, profiles[name], 220, 150, 34);
+    files.push({ name: name+".fastq", raw: fastq });
+  }
+  return files;
+}
+
+/* ============================================================
+   UI: STEP NAV
+============================================================ */
+const order = ["upload","qc","taxonomy","diversity","report"];
+function goToStep(step){
+  order.forEach(s=>{
+    document.getElementById("panel-"+s).classList.toggle("hidden", s!==step);
+  });
+  document.querySelectorAll(".step").forEach(el=>{
+    el.classList.toggle("active", el.dataset.step===step);
+  });
+}
+function unlockStep(step){
+  const el = document.querySelector(`.step[data-step="${step}"]`);
+  el.classList.remove("locked");
+}
+function markDone(step){
+  document.querySelector(`.step[data-step="${step}"]`).classList.add("done");
+}
+document.querySelectorAll(".step").forEach(el=>{
+  el.addEventListener("click", ()=>{ if(!el.classList.contains("locked")) goToStep(el.dataset.step); });
+});
+
+/* ============================================================
+   STEP 1: UPLOAD
+============================================================ */
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+document.getElementById("chooseBtn").onclick = ()=>fileInput.click();
+document.getElementById("demoBtn").onclick = ()=>{
+  const files = loadDemoDataset();
+  ingestFiles(files);
+};
+fileInput.onchange = (e)=>{
+  const files=[];
+  const readers = [...e.target.files].map(f=>new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>{ files.push({name:f.name, raw:r.result}); res(); };
+    r.readAsText(f);
+  }));
+  Promise.all(readers).then(()=>ingestFiles(files));
+};
+["dragenter","dragover"].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove("drag");}));
+dropzone.addEventListener("drop", e=>{
+  const dropped=[...e.dataTransfer.files];
+  const readers = dropped.map(f=>new Promise(res=>{
+    const r=new FileReader(); r.onload=()=>res({name:f.name, raw:r.result}); r.readAsText(f);
+  }));
+  Promise.all(readers).then(files=>ingestFiles(files));
+});
+
+function ingestFiles(files){
+  STATE.samples = files.map(f=>({ name:f.name, raw:f.raw, records: parseFastq(f.raw) }));
+  renderFileList();
+  document.getElementById("runQcBtn").disabled = STATE.samples.length===0;
+}
+function renderFileList(){
+  const el = document.getElementById("filelist");
+  el.innerHTML = STATE.samples.map(s=>
+    `<div class="f"><span><b>${s.name}</b></span><span>${s.records.length.toLocaleString()} reads parsed</span></div>`
+  ).join("");
+}
+document.getElementById("runQcBtn").onclick = ()=>{ runQc(); unlockStep("qc"); markDone("upload"); goToStep("qc"); };
+
+/* ============================================================
+   STEP 2: QC
+============================================================ */
+let qualChart, lenChart, gcChart, taxChart, shannonChart;
+function destroy(c){ if(c) c.destroy(); }
+
+function runQc(){
+  let totalReads=0, totalBases=0, lengths=[], gcs=[];
+  const maxLen = Math.max(...STATE.samples.flatMap(s=>s.records.map(r=>r.seq.length)), 1);
+  const posSums = new Array(maxLen).fill(0);
+  const posCounts = new Array(maxLen).fill(0);
+  let lowQualReads = 0;
+
+  STATE.samples.forEach(s=>{
+    s.records.forEach(r=>{
+      totalReads++; totalBases+=r.seq.length;
+      lengths.push(r.seq.length); gcs.push(gcContent(r.seq));
+      const qs = qualScores(r.qual);
+      qs.forEach((q,i)=>{ posSums[i]+=q; posCounts[i]++; });
+      const mean = qs.reduce((a,b)=>a+b,0)/qs.length;
+      if(mean<20) lowQualReads++;
+    });
+  });
+
+  const perPosMean = posSums.map((sum,i)=> posCounts[i] ? sum/posCounts[i] : null).filter(v=>v!==null);
+  const meanLen = lengths.reduce((a,b)=>a+b,0)/lengths.length;
+  const meanGc = gcs.reduce((a,b)=>a+b,0)/gcs.length;
+
+  document.getElementById("qcStats").innerHTML = `
+    <div class="stat"><div class="v">${totalReads.toLocaleString()}</div><div class="l">Total reads</div></div>
+    <div class="stat"><div class="v">${(totalBases/1000).toFixed(1)}k</div><div class="l">Total bases</div></div>
+    <div class="stat"><div class="v">${meanLen.toFixed(0)} bp</div><div class="l">Mean read length</div></div>
+    <div class="stat"><div class="v">${meanGc.toFixed(1)}%</div><div class="l">Mean GC content</div></div>
+  `;
+
+  destroy(qualChart);
+  qualChart = new Chart(document.getElementById("qualChart"), {
+    type:"line",
+    data:{ labels:perPosMean.map((_,i)=>i+1),
+      datasets:[{ data:perPosMean, borderColor:"#4FD8C4", backgroundColor:"transparent", pointRadius:0, borderWidth:2, tension:0.25 }]},
+    options:{ plugins:{legend:{display:false}},
+      scales:{ y:{min:0,max:40, grid:{color:"#27474E"}, ticks:{color:"#85ACA6"}},
+               x:{ grid:{display:false}, ticks:{color:"#85ACA6", maxTicksLimit:8} } } }
+  });
+
+  const lenBins = histogram(lengths, 12);
+  destroy(lenChart);
+  lenChart = new Chart(document.getElementById("lenChart"), {
+    type:"bar",
+    data:{ labels:lenBins.labels, datasets:[{ data:lenBins.counts, backgroundColor:"#E8A33D" }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, x:{grid:{display:false},ticks:{color:"#85ACA6"}} } }
+  });
+
+  const gcBins = histogram(gcs, 14);
+  destroy(gcChart);
+  gcChart = new Chart(document.getElementById("gcChart"), {
+    type:"bar",
+    data:{ labels:gcBins.labels, datasets:[{ data:gcBins.counts, backgroundColor:"#E8714D" }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, x:{grid:{display:false},ticks:{color:"#85ACA6"}} } }
+  });
+
+  document.getElementById("trimNote").textContent = `${lowQualReads.toLocaleString()} of ${totalReads.toLocaleString()} reads have mean quality below Q20 and will be soft-trimmed.`;
+}
+function histogram(values, bins){
+  const min=Math.min(...values), max=Math.max(...values);
+  const width=(max-min)/bins || 1;
+  const counts=new Array(bins).fill(0);
+  values.forEach(v=>{ let idx=Math.floor((v-min)/width); if(idx>=bins) idx=bins-1; if(idx<0) idx=0; counts[idx]++; });
+  const labels = counts.map((_,i)=> Math.round(min+i*width)+(i===bins-1?"+":"–"+Math.round(min+(i+1)*width)));
+  return {labels, counts};
+}
+
+/* ============================================================
+   TRIMMING (real, sliding-window quality trim)
+============================================================ */
+document.getElementById("trimBtn").onclick = ()=>{
+  STATE.samples.forEach(s=>{
+    s.trimmed = s.records.map(r=>trimRead(r)).filter(r=>r.seq.length>=20);
+  });
+  runTaxonomy();
+  unlockStep("taxonomy"); markDone("qc"); goToStep("taxonomy");
+};
+function trimRead(r, windowSize=5, qThreshold=20){
+  const qs = qualScores(r.qual);
+  let end = qs.length;
+  for(let i=qs.length-windowSize; i>=0; i--){
+    const window = qs.slice(i, i+windowSize);
+    const mean = window.reduce((a,b)=>a+b,0)/window.length;
+    if(mean>=qThreshold){ end=i+windowSize; break; }
+    end = i;
+  }
+  return { id:r.id, seq:r.seq.slice(0,end), qual:r.qual.slice(0,end) };
+}
+
+/* ============================================================
+   STEP 3: TAXONOMY (k-mer motif classifier — illustrative)
+============================================================ */
+function classifyRead(seq){
+  let best="Unclassified", bestScore=0;
+  for(const genus of Object.keys(SIGNATURES)){
+    let score=0;
+    for(const motif of SIGNATURES[genus]) if(seq.includes(motif)) score++;
+    if(score>bestScore){ bestScore=score; best=genus; }
+  }
+  return best;
+}
+function runTaxonomy(){
+  STATE.samples.forEach(s=>{
+    const counts = {}; GENERA.forEach(g=>counts[g]=0);
+    s.trimmed.forEach(r=>{ counts[classifyRead(r.seq)]++; });
+    s.taxCounts = counts;
+  });
+
+  destroy(taxChart);
+  taxChart = new Chart(document.getElementById("taxChart"), {
+    type:"bar",
+    data:{
+      labels: STATE.samples.map(s=>s.name.replace(/\.(fastq|fq|txt)$/i,"")),
+      datasets: GENERA.map(g=>({
+        label:g,
+        data: STATE.samples.map(s=>s.taxCounts[g]),
+        backgroundColor: GENUS_COLORS[g]
+      }))
+    },
+    options:{
+      plugins:{ legend:{ position:"bottom", labels:{color:"#85ACA6", font:{family:"IBM Plex Mono",size:11}} } },
+      scales:{ x:{ stacked:true, grid:{display:false}, ticks:{color:"#85ACA6"} },
+               y:{ stacked:true, grid:{color:"#27474E"}, ticks:{color:"#85ACA6"} } }
+    }
+  });
+
+  const rows = STATE.samples.map(s=>{
+    const total = Object.values(s.taxCounts).reduce((a,b)=>a+b,0) || 1;
+    const header = `<tr><td colspan="3" style="padding-top:14px;font-family:'IBM Plex Mono';color:#85ACA6;font-size:11px;text-transform:uppercase;">${s.name}</td></tr>`;
+    const body = GENERA.map(g=>`<tr><td><span class="swatch" style="background:${GENUS_COLORS[g]}"></span>${g}</td><td>${s.taxCounts[g]}</td><td>${(s.taxCounts[g]/total*100).toFixed(1)}%</td></tr>`).join("");
+    return header + body;
+  }).join("");
+  document.getElementById("taxTable").innerHTML = `<tr><th>Genus</th><th>Reads</th><th>Share</th></tr>` + rows;
+}
+
+/* ============================================================
+   STEP 4: DIVERSITY
+============================================================ */
+function diversityFromCounts(counts){
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  const props = Object.values(counts).filter(c=>c>0).map(c=>c/total);
+  const richness = Object.entries(counts).filter(([g,c])=>g!=="Unclassified" && c>0).length;
+  const shannon = -props.reduce((sum,p)=> sum + p*Math.log(p), 0);
+  const simpson = 1 - props.reduce((sum,p)=> sum + p*p, 0);
+  return { richness, shannon, simpson };
+}
+document.getElementById("diversityBtn").onclick = ()=>{
+  STATE.samples.forEach(s=>{ s.diversity = diversityFromCounts(s.taxCounts); });
+  renderDiversity();
+  unlockStep("diversity"); markDone("taxonomy"); goToStep("diversity");
+};
+function renderDiversity(){
+  destroy(shannonChart);
+  shannonChart = new Chart(document.getElementById("shannonChart"), {
+    type:"bar",
+    data:{ labels: STATE.samples.map(s=>s.name.replace(/\.(fastq|fq|txt)$/i,"")),
+      datasets:[{ data: STATE.samples.map(s=>s.diversity.shannon), backgroundColor:"#4FD8C4" }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, x:{grid:{display:false},ticks:{color:"#85ACA6"}} } }
+  });
+  document.getElementById("divTable").innerHTML = `<tr><th>Sample</th><th>Richness</th><th>Shannon</th><th>Simpson</th></tr>` +
+    STATE.samples.map(s=>`<tr><td>${s.name.replace(/\.(fastq|fq|txt)$/i,"")}</td><td>${s.diversity.richness}</td><td>${s.diversity.shannon.toFixed(2)}</td><td>${s.diversity.simpson.toFixed(2)}</td></tr>`).join("");
+}
+document.getElementById("reportBtn").onclick = ()=>{
+  unlockStep("report"); markDone("diversity"); goToStep("report");
+  document.getElementById("reportNote").textContent = `Ready to export ${STATE.samples.length} sample(s): QC summary, taxonomic composition, and alpha diversity.`;
+};
+
+/* ============================================================
+   STEP 5: PDF REPORT
+============================================================ */
+document.getElementById("pdfBtn").onclick = ()=>{
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 18;
+  doc.setFont("helvetica","bold"); doc.setFontSize(18);
+  doc.text("OmniOmics Cloud — Metagenomic Analysis Report", 14, y); y+=10;
+  doc.setFont("helvetica","normal"); doc.setFontSize(10);
+  doc.text(`Generated ${new Date().toLocaleString()} · ${STATE.samples.length} sample(s)`, 14, y); y+=10;
+
+  STATE.samples.forEach(s=>{
+    if(y>260){ doc.addPage(); y=18; }
+    doc.setFont("helvetica","bold"); doc.setFontSize(13);
+    doc.text(s.name, 14, y); y+=7;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    doc.text(`Reads (raw / trimmed): ${s.records.length} / ${s.trimmed.length}`, 14, y); y+=6;
+    doc.text(`Diversity — richness ${s.diversity.richness}, Shannon ${s.diversity.shannon.toFixed(2)}, Simpson ${s.diversity.simpson.toFixed(2)}`, 14, y); y+=6;
+    const total = Object.values(s.taxCounts).reduce((a,b)=>a+b,0) || 1;
+    GENERA.forEach(g=>{
+      doc.text(`  ${g}: ${s.taxCounts[g]} reads (${(s.taxCounts[g]/total*100).toFixed(1)}%)`, 14, y); y+=5.5;
+    });
+    y+=6;
+  });
+
+  ["qualChart","lenChart","taxChart","shannonChart"].forEach(id=>{
+    const canvas = document.getElementById(id);
+    if(!canvas) return;
+    if(y>190){ doc.addPage(); y=18; }
+    try{
+      const img = canvas.toDataURL("image/png");
+      doc.addImage(img, "PNG", 14, y, 180, 80);
+      y+=86;
+    }catch(e){}
+  });
+
+  doc.setFontSize(8); doc.setTextColor(150);
+  doc.text("Taxonomic classification uses an illustrative demo reference set, not a production database.", 14, 290);
+  doc.save("omniomics-metagenomics-report.pdf");
+};
+/* ============================================================
+   MODULE SWITCHER
+============================================================ */
+document.querySelectorAll(".modlink").forEach(el=>{
+  el.addEventListener("click", ()=>{
+    document.querySelectorAll(".modlink").forEach(x=>x.classList.remove("active"));
+    el.classList.add("active");
+    ["metagenomics","sanger","genome"].forEach(app=>{
+      document.getElementById("app-"+app).classList.toggle("hidden", app!==el.dataset.app);
+    });
+  });
+});
+
+/* ============================================================
+   SANGER MODULE
+============================================================ */
+const REFERENCES = {
+  "16S_consensus_demo": "ATGCGTACCTGAACGTTAGGCTACGGATTCAGCCTGAACTGGTACCAGGCTTAACGGTTACCGGAATTCGCATGGCTTAACGGCATCGTAGCATGGCTAACGTTAGCCATGGCTAACGGTTAGCATGCGGTTAACCGGATCGTACGGTTAACCGGATCGTAGGCTTAACGGTAGCCTGAACGGTTACCATGGCTAACG",
+  "BRCA1_exon_demo":   "ATGGATTTATCTGCTCTTCGCGTTGAAGAAGTACAAAATGTCATTAATGCTATGCAGAAAATCTTAGAGTGTCCCATCTGTCTGGAGTTGATCAAGGAACCTGTCTCCACAAAGTGTGACCACATATTTTGCAAATTTTGCATGCTGAAACTTCTCAACCAGAAGAAAGGGCCTTCACAGTGTCCTTTATGTAAGAATG"
+};
+function initSangerRefs(){
+  const sel = document.getElementById("sangerRef");
+  Object.keys(REFERENCES).forEach(name=>{
+    const opt = document.createElement("option"); opt.value=name; opt.textContent=name; sel.appendChild(opt);
+  });
+}
+initSangerRefs();
+
+function parseSangerInput(text){
+  const lines = text.trim().split(/\r?\n/);
+  let seq = "";
+  lines.forEach(l=>{ if(!l.startsWith(">") && !l.startsWith("@") && !l.startsWith("+")) seq += l.trim(); });
+  return seq.toUpperCase().replace(/[^ACGTN]/g,"");
+}
+function syntheticQualForSeq(seq){
+  // illustrative per-base confidence proxy when no real quality string is supplied
+  let q=[];
+  for(let i=0;i<seq.length;i++){
+    const edge = Math.min(i, seq.length-1-i);
+    q.push(Math.min(38, 16 + edge*1.3 + (Math.random()*4-2)));
+  }
+  return q;
+}
+document.getElementById("sangerDemoBtn").onclick = ()=>{
+  document.getElementById("sangerInput").value =
+    ">demo_read\n" + "ATGCGTACCTGAACGTTAGGCTACGGATTCAGCCTGAACTGGTACCAGGCTTAACGGTTACCGGAATTCGCATGGCTTAACGGCATCGTAGCATGGCTAACGTTAGCCATGGCTAACGGTTAGCATGCGGTTAACCGGATCGTACGGTTAACCGGATCGTAGGCTTAACGGTAGCCTGAACGTTACCATGGCTAACC".replace(/.{60}/g, m=>m+"\n");
+  document.getElementById("sangerRef").value = "16S_consensus_demo";
+};
+function trimByQuality(seq, q, threshold=20, window=5){
+  let start=0, end=seq.length;
+  for(let i=0;i<=seq.length-window;i++){
+    const mean = q.slice(i,i+window).reduce((a,b)=>a+b,0)/window;
+    if(mean>=threshold){ start=i; break; }
+  }
+  for(let i=seq.length-window;i>=0;i--){
+    const mean = q.slice(i,i+window).reduce((a,b)=>a+b,0)/window;
+    if(mean>=threshold){ end=i+window; break; }
+  }
+  return { seq: seq.slice(start,end), q: q.slice(start,end), trimmedStart:start, trimmedEnd:seq.length-end };
+}
+function localAlign(a, b){
+  // simple sliding-window best-offset alignment (illustrative, not Smith-Waterman)
+  let bestOffset=0, bestScore=-1;
+  const maxOffset = Math.abs(a.length-b.length)+10;
+  for(let off=-maxOffset; off<=maxOffset; off++){
+    let score=0, n=0;
+    for(let i=0;i<a.length;i++){
+      const j=i+off;
+      if(j<0||j>=b.length) continue;
+      n++; if(a[i]===b[j]) score++;
+    }
+    if(n>20 && score>bestScore){ bestScore=score; bestOffset=off; }
+  }
+  return bestOffset;
+}
+let sangerQualChart, sangerCompChart;
+document.getElementById("sangerRunBtn").onclick = ()=>{
+  const raw = parseSangerInput(document.getElementById("sangerInput").value);
+  if(raw.length<10){ alert("Paste a sequence of at least 10 bases first."); return; }
+  const q = syntheticQualForSeq(raw);
+  const trimmed = trimByQuality(raw, q);
+  const gc = gcContent(trimmed.seq);
+  const comp = {A:0,C:0,G:0,T:0,N:0};
+  for(const c of trimmed.seq) comp[c]=(comp[c]||0)+1;
+
+  document.getElementById("sangerResults").classList.remove("hidden");
+  document.getElementById("sangerStats").innerHTML = `
+    <div class="stat"><div class="v">${raw.length} bp</div><div class="l">Raw length</div></div>
+    <div class="stat"><div class="v">${trimmed.seq.length} bp</div><div class="l">After trimming</div></div>
+    <div class="stat"><div class="v">${gc.toFixed(1)}%</div><div class="l">GC content</div></div>
+    <div class="stat"><div class="v">${trimmed.trimmedStart}/${trimmed.trimmedEnd}</div><div class="l">Trimmed 5′/3′ (bp)</div></div>
+  `;
+
+  destroy(sangerQualChart);
+  sangerQualChart = new Chart(document.getElementById("sangerQualChart"), {
+    type:"line",
+    data:{ labels:trimmed.q.map((_,i)=>i+1), datasets:[{ data:trimmed.q, borderColor:"#4FD8C4", pointRadius:0, borderWidth:2, tension:0.25 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{min:0,max:40,grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, x:{grid:{display:false},ticks:{color:"#85ACA6",maxTicksLimit:8}} } }
+  });
+  destroy(sangerCompChart);
+  sangerCompChart = new Chart(document.getElementById("sangerCompChart"), {
+    type:"doughnut",
+    data:{ labels:Object.keys(comp), datasets:[{ data:Object.values(comp), backgroundColor:["#4FD8C4","#E8714D","#E8A33D","#7FD6E8","#3F5C61"] }] },
+    options:{ plugins:{legend:{position:"bottom",labels:{color:"#85ACA6",font:{family:"IBM Plex Mono",size:11}}}} }
+  });
+
+  const refName = document.getElementById("sangerRef").value;
+  if(refName){
+    const ref = REFERENCES[refName];
+    const offset = localAlign(trimmed.seq, ref);
+    let html="", mismatches=0, compared=0;
+    for(let i=0;i<trimmed.seq.length;i++){
+      const j=i+offset;
+      if(j<0||j>=ref.length){ html+=`<span style="color:var(--muted)">${trimmed.seq[i]}</span>`; continue; }
+      compared++;
+      if(trimmed.seq[i]===ref[j]) html+=trimmed.seq[i];
+      else { html+=`<span style="background:var(--coral);color:#fff;border-radius:2px;">${trimmed.seq[i]}</span>`; mismatches++; }
+    }
+    document.getElementById("sangerAlign").innerHTML = html;
+    document.getElementById("sangerAlignNote").textContent = `${mismatches} mismatch(es) out of ${compared} aligned bases vs. ${refName} (offset ${offset}). Highlighted bases differ from the reference.`;
+  } else {
+    document.getElementById("sangerAlign").textContent = trimmed.seq;
+    document.getElementById("sangerAlignNote").textContent = "Choose a reference above to highlight mismatches.";
+  }
+};
+
+/* ============================================================
+   GENOME MODULE (universal — plant/animal/virus/fungus/bacteria)
+============================================================ */
+function parseFasta(text){
+  const records=[]; let cur=null;
+  text.split(/\r?\n/).forEach(line=>{
+    if(line.startsWith(">")){ if(cur) records.push(cur); cur={ id:line.slice(1).trim(), seq:"" }; }
+    else if(cur){ cur.seq += line.trim().toUpperCase().replace(/[^ACGTN]/g,""); }
+  });
+  if(cur) records.push(cur);
+  return records;
+}
+function n50(lengths){
+  const sorted=[...lengths].sort((a,b)=>b-a);
+  const total=sorted.reduce((a,b)=>a+b,0);
+  let cum=0;
+  for(const l of sorted){ cum+=l; if(cum>=total/2) return l; }
+  return sorted[0]||0;
+}
+const STOP_CODONS=["TAA","TAG","TGA"];
+function findOrfs(seq, minLen=100){
+  const orfs=[];
+  for(let frame=0; frame<3; frame++){
+    let i=frame;
+    while(i<seq.length-2){
+      if(seq.slice(i,i+3)==="ATG"){
+        let j=i+3;
+        while(j<seq.length-2 && !STOP_CODONS.includes(seq.slice(j,j+3))) j+=3;
+        const len=j-i;
+        if(len>=minLen) orfs.push({start:i, end:j, length:len, frame});
+        i=j+3;
+      } else i+=3;
+    }
+  }
+  return orfs.sort((a,b)=>b.length-a.length);
+}
+function codonUsage(seq){
+  const counts={};
+  for(let i=0;i+2<seq.length;i+=3){
+    const c=seq.slice(i,i+3);
+    if(c.length===3 && !c.includes("N")){ counts[c]=(counts[c]||0)+1; }
+  }
+  return counts;
+}
+function randSeqGenome(len, gcBias){
+  let s=""; 
+  for(let i=0;i<len;i++){
+    const r=Math.random();
+    s += r<gcBias/2 ? "G" : r<gcBias ? "C" : r<gcBias+(1-gcBias)/2 ? "A" : "T";
+  }
+  return s;
+}
+function injectOrfs(seq, count){
+  let s=seq.split("");
+  for(let k=0;k<count;k++){
+    const len = (Math.floor(Math.random()*15)+5)*3; // multiple of 3, 15-60 codons
+    const pos = Math.floor(Math.random()*(s.length-len-10));
+    let orf = "ATG";
+    for(let i=3;i<len-3;i+=3) orf += ["GCT","GAT","AAA","CTG","TTC","CGT","AGC","GGA"][Math.floor(Math.random()*8)];
+    orf += ["TAA","TAG","TGA"][Math.floor(Math.random()*3)];
+    for(let i=0;i<orf.length;i++) s[pos+i]=orf[i];
+  }
+  return s.join("");
+}
+const KINGDOM_PROFILES = {
+  Plant:    { gc:0.42, contigs:6,  len:[3000,9000] },
+  Animal:   { gc:0.41, contigs:5,  len:[4000,12000] },
+  Virus:    { gc:0.45, contigs:1,  len:[1200,3000]  },
+  Fungus:   { gc:0.50, contigs:4,  len:[2500,7000]  },
+  Bacteria: { gc:0.55, contigs:3,  len:[5000,15000] }
+};
+function generateDemoGenome(kingdom){
+  const p = KINGDOM_PROFILES[kingdom];
+  let fasta="";
+  for(let c=1;c<=p.contigs;c++){
+    const len = Math.floor(p.len[0]+Math.random()*(p.len[1]-p.len[0]));
+    let seq = randSeqGenome(len, p.gc);
+    seq = injectOrfs(seq, Math.max(2, Math.floor(len/2500)));
+    fasta += `>${kingdom}_demo_contig_${c} synthetic, ${len}bp\n` + seq.replace(/.{70}/g, m=>m+"\n") + "\n";
+  }
+  return fasta;
+}
+
+let genomeLenChart, genomeGcChart, genomeOrfChart;
+let GENOME_STATE = {};
+
+function runGenomeAnalysis(fastaText, kingdom){
+  const records = parseFasta(fastaText).filter(r=>r.seq.length>0);
+  if(records.length===0){ alert("No valid FASTA sequences found."); return; }
+  const lengths = records.map(r=>r.seq.length);
+  const totalLen = lengths.reduce((a,b)=>a+b,0);
+  const gcs = records.map(r=>gcContent(r.seq));
+  const meanGc = gcs.reduce((a,b)=>a+b,0)/gcs.length;
+  const n50val = n50(lengths);
+  const allOrfs = records.flatMap(r=>findOrfs(r.seq));
+  const longestOrfs = allOrfs.slice(0,12);
+  const allCodons = {};
+  records.forEach(r=>{ const c=codonUsage(r.seq); Object.entries(c).forEach(([k,v])=>{ allCodons[k]=(allCodons[k]||0)+v; }); });
+  const topCodons = Object.entries(allCodons).sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  GENOME_STATE = { records, kingdom };
+  document.getElementById("genomeKingdomLabel").textContent = kingdom;
+  document.getElementById("genomeResults").classList.remove("hidden");
+  document.getElementById("genomeStats").innerHTML = `
+    <div class="stat"><div class="v">${records.length}</div><div class="l">Contigs / sequences</div></div>
+    <div class="stat"><div class="v">${(totalLen/1000).toFixed(1)} kb</div><div class="l">Total assembly length</div></div>
+    <div class="stat"><div class="v">${meanGc.toFixed(1)}%</div><div class="l">Mean GC content</div></div>
+    <div class="stat"><div class="v">${n50val.toLocaleString()} bp</div><div class="l">N50</div></div>
+  `;
+
+  destroy(genomeLenChart);
+  genomeLenChart = new Chart(document.getElementById("genomeLenChart"), {
+    type:"bar",
+    data:{ labels:records.map(r=>r.id.slice(0,18)), datasets:[{ data:lengths, backgroundColor:"#E8A33D" }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, x:{grid:{display:false},ticks:{color:"#85ACA6",maxRotation:45,minRotation:45}} } }
+  });
+  destroy(genomeGcChart);
+  genomeGcChart = new Chart(document.getElementById("genomeGcChart"), {
+    type:"bar",
+    data:{ labels:records.map(r=>r.id.slice(0,18)), datasets:[{ data:gcs.map(g=>g.toFixed(1)), backgroundColor:"#4FD8C4" }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, x:{grid:{display:false},ticks:{color:"#85ACA6",maxRotation:45,minRotation:45}} } }
+  });
+  destroy(genomeOrfChart);
+  genomeOrfChart = new Chart(document.getElementById("genomeOrfChart"), {
+    type:"bar",
+    data:{ labels:longestOrfs.map((o,i)=>"ORF "+(i+1)), datasets:[{ data:longestOrfs.map(o=>o.length), backgroundColor:"#E8714D" }]},
+    options:{ indexAxis:"y", plugins:{legend:{display:false}}, scales:{ x:{grid:{color:"#27474E"},ticks:{color:"#85ACA6"}}, y:{grid:{display:false},ticks:{color:"#85ACA6"}} } }
+  });
+  document.getElementById("codonTable").innerHTML = `<tr><th>Codon</th><th>Count</th><th>Share</th></tr>` +
+    topCodons.map(([codon,count])=>{
+      const total = Object.values(allCodons).reduce((a,b)=>a+b,0)||1;
+      return `<tr><td>${codon}</td><td>${count}</td><td>${(count/total*100).toFixed(2)}%</td></tr>`;
+    }).join("");
+}
+
+document.getElementById("genomeChooseBtn").onclick = ()=>document.getElementById("genomeFileInput").click();
+document.getElementById("genomeFileInput").onchange = (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    document.getElementById("genomeFilelist").innerHTML = `<div class="f"><span><b>${f.name}</b></span><span>loaded</span></div>`;
+    runGenomeAnalysis(r.result, document.getElementById("kingdomSelect").value);
+  };
+  r.readAsText(f);
+};
+document.getElementById("genomeDemoBtn").onclick = ()=>{
+  const kingdom = document.getElementById("kingdomSelect").value;
+  const fasta = generateDemoGenome(kingdom);
+  document.getElementById("genomeFilelist").innerHTML = `<div class="f"><span><b>${kingdom}_demo.fasta</b></span><span>synthetic demo genome loaded</span></div>`;
+  runGenomeAnalysis(fasta, kingdom);
+};
+["dragenter","dragover"].forEach(ev=>document.getElementById("genomeDropzone").addEventListener(ev,e=>{e.preventDefault();e.currentTarget.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>document.getElementById("genomeDropzone").addEventListener(ev,e=>{e.preventDefault();e.currentTarget.classList.remove("drag");}));
+document.getElementById("genomeDropzone").addEventListener("drop", e=>{
+  const f=e.dataTransfer.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    document.getElementById("genomeFilelist").innerHTML = `<div class="f"><span><b>${f.name}</b></span><span>loaded</span></div>`;
+    runGenomeAnalysis(r.result, document.getElementById("kingdomSelect").value);
+  };
+  r.readAsText(f);
+});
+</script>
+</body>
+</html>
